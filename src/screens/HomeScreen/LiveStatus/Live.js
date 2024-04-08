@@ -5,10 +5,9 @@ import { useDeviceContext } from '../../../context/DeviceContext';
 import { useEllipsisOptions } from '../../../context/EllipsisContext';
 import { useIsFocused } from '@react-navigation/native'; // Importing useIsFocused hook
 import styles from './LiveStatusStyles';
-import { getLatestSensorData } from '../../../apiUtils/apiUrls'; // Import the API function for fetching sensor data
+import axios from 'axios'; // Importing Axios for making HTTP requests
 import showToastInCenter from '../../../utils/CenterToast';
 import { getLatestSensorDataByUrl } from '../../../apiUtils/apiUrls';
-
 const Live = ({ navigation }) => {
   const { selectedDevice } = useDeviceContext();
   const { hideEllipsisOptions } = useEllipsisOptions();
@@ -19,8 +18,20 @@ const Live = ({ navigation }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getLatestSensorDataByUrl(selectedDevice.device_id); 
-        setSensorValues({ ...data, loading: false });
+        const response = await fetch(getLatestSensorDataByUrl(selectedDevice.device_id));
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+          const latestReading = data[0];
+          setSensorValues({
+            pH: latestReading.tds,
+            temperature: latestReading.temp,
+            orp: latestReading.conductivity,
+            timestamp: latestReading.timestamp,
+            loading:false
+          });
+        }
+
       } catch (error) {
         console.error('Failed to fetch sensor data:', error);
         setSensorValues({ pH: '', temperature: '', orp: '', timestamp: '', loading: false });
@@ -29,6 +40,7 @@ const Live = ({ navigation }) => {
 
     fetchData();
   }, [selectedDevice.device_id]);
+
   useEffect(() => {
     let timerId;
     if (isFocused && !sensorValues.loading) {
@@ -43,7 +55,6 @@ const Live = ({ navigation }) => {
       clearTimeout(timerId);
     };
   }, [isFocused, sensorValues.loading]);
-  
 
   if (sensorValues.loading) {
     return <ActivityIndicator size="large" style={styles.loader} />;
