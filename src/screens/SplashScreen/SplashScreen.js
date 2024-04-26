@@ -5,14 +5,16 @@ import {
   responsiveWidth,
 } from 'react-native-responsive-dimensions';
 import LogoImage from './SplashImage.png';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { useUser } from '../../context/userContext';
+import { useDeviceContext } from '../../context/DeviceContext';
 const SplashScreen = ({ navigation }) => {
+  const [isLoading, setIsLoading] = useState(true);
   const fadeAnim = useState(new Animated.Value(0))[0];
+  const { storeUser } = useUser();
+  const { updateSelectedDevice } = useDeviceContext();
 
   useEffect(() => {
-    
     const fadeInLogo = () => {
       Animated.timing(
         fadeAnim,
@@ -23,35 +25,56 @@ const SplashScreen = ({ navigation }) => {
         }
       ).start();
     };
+
     const checkCredentials = async () => {
-       fadeInLogo();
-      setTimeout(async () => {
-        const credentials = await AsyncStorage.getItem('NiPoolPalCredentials');
+      try {
+        let credentials = await AsyncStorage.getItem('NiPoolPalCredentials');
+        credentials = JSON.parse(credentials)
         if (credentials) {
-          navigation.replace('Home');
-        } else {
-          navigation.replace('LoginScreen');
+          storeUser(credentials.email, credentials.phone);
+          try{
+          const response = await fetch(`https://nimblevision.io/public/api/getUserDeviceIds?key=chinnu&token=257bbec888a81696529ee979804cca59&user_phone=${credentials.phone}&user_email=${credentials.email}`);
+          const data = await response.json();
+          if (data && data.length > 0) {
+            const firstDevice = data[0];
+              updateSelectedDevice(firstDevice);
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
         }
-      }, 2000); 
+          navigation.replace('Home');
+          console.log('Inside the 1st if ')
+        } else {
+              
+              navigation.replace('LoginScreen');
+            }
+      } catch (error) {
+        console.error('Error retrieving credentials:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    const timeout = setTimeout(() => {
-      checkCredentials();
-    }, 500); 
-    return () => clearTimeout(timeout);
-  }, [navigation]);
+    fadeInLogo();
+    checkCredentials();
 
-  
+    return () => clearTimeout();
+  }, [fadeAnim, navigation]);
 
-  return (
-    <View style={styles.container}>
-      <Animated.Image
-        source={LogoImage}
-        style={[styles.logo, { opacity: fadeAnim }]}
-      />
-      
-    </View>
-  );
+  if (isLoading) {
+    // Render loader
+    return (
+      <View style={styles.container}>
+        <Animated.Image
+          source={LogoImage}
+          style={[styles.logo, { opacity: fadeAnim }]}
+        />
+      </View>
+    );
+  }
+
+  // Render empty view while loading
+  return <View />;
 };
 
 const styles = StyleSheet.create({
@@ -67,6 +90,5 @@ const styles = StyleSheet.create({
     resizeMode: 'cover', 
   },
 });
-
 
 export default SplashScreen;

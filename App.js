@@ -16,7 +16,6 @@ import { OptionsProvider } from './src/context/OptionsContext';
 import { UserProvider } from './src/context/userContext';
 import Live from './src/screens/HomeScreen/LiveStatus/Live';
 const Stack = createStackNavigator();
-import Toast from 'react-native-toast-message';
 import Analysis from './src/screens/HomeScreen/Analysis/Analysis';
 
 const App = () => {
@@ -28,8 +27,9 @@ const App = () => {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="SplashScreen">
         <Stack.Screen name="SplashScreen" component={SplashScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
+       
         <Stack.Screen name="Live" component={Live} />
         <Stack.Screen name="Analysis" component={Analysis} />
        
@@ -41,7 +41,6 @@ const App = () => {
         <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }}/>
       </Stack.Navigator>
     </NavigationContainer>
-    <Toast ref={(ref) => Toast.setRef(ref)} />
 
     </DeviceProvider>
     </EllipsisOptionsProvider>

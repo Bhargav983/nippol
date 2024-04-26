@@ -1,53 +1,75 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
-import { useIsFocused } from '@react-navigation/native'; // Importing useIsFocused hook
-import PHLineChart from './PHLineChart';
-import TemperatureLineChart from './TemperatureLineChart';
-import ORPLineChart from './ORPLineChart';
+import { useIsFocused } from '@react-navigation/native';
+// import PHLineChart from './PHLineChart';
+// import ORPLineChart from './ORPLineChart';
+import ORPLineChart from './Charts/ORPLineChart';
 import SensorDataFetcher from './SensorDataFetcher';
 import { useDeviceContext } from '../../../context/DeviceContext';
 import { useEllipsisOptions } from '../../../context/EllipsisContext';
-import showToastInCenter from '../../../utils/CenterToast';
 import styles from './AnalysisStyles';
+// import ConductivityLineChart from './ConductivityLineChart';
+import PHLineChart from './Charts/PHLineChart';
+import ConductivityLineChart from './Charts/ConductivityLineChart';
+import Loader from '../../../utils/Loader';
+import CustomModal from '../../../utils/CustomModal';
 
 const Analysis = () => {
   const { selectedDevice } = useDeviceContext();
   const { hideEllipsisOptions } = useEllipsisOptions();
-  const isFocused = useIsFocused(); // Using useIsFocused hook
+  const isFocused = useIsFocused();
+  const [chartVisible, setChartVisible] = useState(false);
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(0); 
   const deviceId = selectedDevice.device_id;
-  const { loading, sensorDataSets, latestTimestamp } = SensorDataFetcher({ deviceId });
+  const { loading, sensorDataSets, latestTimestamp ,updateAvailable} = SensorDataFetcher({ deviceId });
 
-  useEffect(() => {
-    let timerId;
-    if (isFocused && !loading) {
-      // Show the toast message after a delay of 2 seconds
-      timerId = setTimeout(() => {
-        showToastInCenter("Displaying the latest info", 'success');
-      }, 1000);
-    }
+  let pHData = [];
+  let orpData = [];
+  let conductivityData = [];
+
+  if (sensorDataSets) {
+    pHData = sensorDataSets.pHData || [];
+    orpData = sensorDataSets.orpData || [];
+    conductivityData = sensorDataSets.conductivityData || [];
+  }
   
-    return () => {
-      // Clear the timer when the component unmounts or the dependencies change
-      clearTimeout(timerId);
-    };
+  useEffect(() => {
+    if (isFocused && !loading && updateAvailable) {
+      setModalVisible(true);
+      setErrorMsg(1);
+    }
   }, [isFocused, loading]);
   
-
   if (loading) {
-    return <ActivityIndicator size="large" style={styles.loader} />;
+    return <Loader />;
   }
 
-  if (!sensorDataSets) {
-    showToastInCenter("Failed to get the latest info", 'error');
-    return <Text style={styles.errorText}>No sensor data available.</Text>;
+  if (!sensorDataSets || !pHData.length || !orpData.length || !conductivityData.length) {
+    setTimeout(() => {
+      setModalVisible(fale);
+      setErrorMsg(2);
+    }, 1500);
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{loading ? 'Loading...' : 'No sensor data available.'}</Text>
+      </View>
+    );
   }
 
-  const { pHData, temperatureData, orpData } = sensorDataSets;
+  const handleClose = () => {
+    setModalVisible(false);
+    setChartVisible(true);
+  };
+
   return (
     <ScrollView style={{ flex: 1 }}>
       <TouchableOpacity onPress={hideEllipsisOptions} activeOpacity={1}>
-        <View style={styles.container}>
+        <CustomModal visible={modalVisible} errorMsg={errorMsg} onClose={handleClose} />
+        {
+          chartVisible &&
+          <View style={styles.container}>
           <Text style={styles.heading}>Last Update Received:</Text>
           <Text style={styles.time}>{latestTimestamp}</Text>
 
@@ -55,22 +77,24 @@ const Analysis = () => {
           <Text style={styles.line}></Text>
 
           <Text style={styles.heading}>PH Chart </Text>
-          <PHLineChart data={pHData} />
+          {pHData && <PHLineChart data={pHData} />}
 
           <View style={{ marginBottom: 20 }}></View>
           <Text style={styles.line}></Text>
-          <Text style={styles.heading}>Temperature Chart </Text>
-
-          <TemperatureLineChart data={temperatureData} />
-
-          <View style={{ marginBottom: 20 }}></View>
-          <Text style={styles.line}></Text>
-
           <Text style={styles.heading}>ORP Chart </Text>
-          <ORPLineChart data={orpData} />
+
+          {orpData && <ORPLineChart data={orpData} />}
+
+          <View style={{ marginBottom: 20 }}></View>
+          <Text style={styles.line}></Text>
+
+          <Text style={styles.heading}>Conductivity Chart </Text>
+          {conductivityData && <ConductivityLineChart data={conductivityData} />}
 
           <View style={{ marginBottom: 100 }}></View>
         </View>
+        }
+        
       </TouchableOpacity>
     </ScrollView>
   );

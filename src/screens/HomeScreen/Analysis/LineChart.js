@@ -279,7 +279,7 @@ const LineChart = ({
       // console.log("Y ",y)
       const dataPoints = data.length - 1;
       const textValue = Math.round(min + (yMax / dataPoints) * index); 
-
+      
       return (
         <G key={`y_axis_labels-${index}`}>
           <SvgText
@@ -320,6 +320,18 @@ const LineChart = ({
       let y = (yMax - item[y_key]) * (y_gap / y_value_gap) + y_margin;
       // let roundedYValue = Math.round(item[y_key]);
       // let y = (yMax - roundedYValue) * (y_gap / y_value_gap) + y_margin;
+      let labelText = item.conductivity;
+      if (labelText > 1000) {
+        labelText = (labelText / 1000).toFixed(1);
+        if (labelText.endsWith('.0')) {
+          labelText = labelText.slice(0, -2);
+        }
+        labelText += "k";
+      }
+      else{
+        labelText = item[y_key]
+      }
+      // console.log("labelText",labelText)
       return (
         <G key={`chart-circles-${index}`}>
           <Circle
@@ -358,7 +370,7 @@ const LineChart = ({
                 fontSize={fontSize}
                 fontWeight={fontWeight}
                 textAnchor={textAnchor}>
-                {item[y_key]}
+                {labelText}
               </SvgText>
             </G>
           ) : null}

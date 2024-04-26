@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
+import axios from 'axios'; // Importing Axios for making HTTP requests
+import CustomModal from '../../../utils/CustomModal';
 
 // Function to filter labels to reduce clutter on the X-axis
 const filterLabels = (labels) => {
@@ -15,15 +17,21 @@ const SensorDataFetcher = ({ deviceId }) => {
   const [loading, setLoading] = useState(true);
   const [sensorData, setSensorData] = useState([]);
   const [updateAvailable, setUpdateAvailable] = useState(false); // Initialize updateAvailable to false
-
+  const [modalVisible, setModalVisible] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(0);
   useEffect(() => {
     const fetchSensorData = async () => {
       try {
         const url = `https://nimblevision.io/public/api/getDeviceDiagnosticInfoNisensu?key=chinnu&token=257bbec888a81696529ee979804cca59&device_id=${deviceId}`;
-        const response = await fetch(url);
-        const data = await response.json();
+        const response = await axios.get(url, { timeout: 5000 }); // Timeout after 5 seconds
+        const data = response.data;
+
+
         setSensorData(data);
-        setUpdateAvailable(true); // Set updateAvailable to true when new data is received
+        setUpdateAvailable(true); 
+        
+        
+        // Set updateAvailable to true when new data is received
       } catch (error) {
         console.error('Failed to fetch sensor data:', error);
         setSensorData([]); 
@@ -34,13 +42,12 @@ const SensorDataFetcher = ({ deviceId }) => {
     };
 
     fetchSensorData();
-    const intervalId = setInterval(fetchSensorData, 600000); // Refresh every 10 minutes
-    return () => clearInterval(intervalId);
+    return () => {};
   }, []);
 
   const processSensorData = () => {
     if (!Array.isArray(sensorData) || sensorData.length === 0) return { loading, sensorDataSets: null, latestTimestamp: null }; // Return latestTimestamp as null if no data is available
-    let latestTimestamp =sensorData[0].timestamp;
+    let latestTimestamp = sensorData[0].timestamp;
     const devices = sensorData.slice(0, 10).sort((a, b) => moment(a.timestamp) - moment(b.timestamp)); // Sorting devices array based on timestamp
     let timestamps = devices.map(device => moment(device.timestamp));
     
@@ -49,14 +56,14 @@ const SensorDataFetcher = ({ deviceId }) => {
       time: index % 2 === 1 ? ' ' : moment(device.timestamp).format('HH:mm')
     }));
     
-    const temperatureData = devices.map((device, index) => ({
-      temperature: Math.round(parseFloat(device.temp)),
-      time: index % 2 === 1 ? ' ' : moment(device.timestamp).format('HH:mm')
+    const orpData = devices.map((device, index) => ({
+      orp: Math.round(parseFloat(device.voltage_5)),
+      time:moment(device.timestamp).format('HH:mm')
     }));
     
-    
-    const orpData = devices.map((device, index) => ({
-      orp: Math.round(parseFloat(device.conductivity)),
+    console.log("orpData",orpData)
+    const conductivityData = devices.map((device, index) => ({
+      conductivity: Math.round(parseFloat(device.conductivity)),
       time: index % 2 === 1 ? ' ' : moment(device.timestamp).format('HH:mm')
     }));
     
@@ -67,8 +74,8 @@ const SensorDataFetcher = ({ deviceId }) => {
       latestTimestamp,
       sensorDataSets: {
         pHData,
-        temperatureData,
         orpData,
+        conductivityData,
       }
     };
   };
@@ -77,4 +84,3 @@ const SensorDataFetcher = ({ deviceId }) => {
 };
 
 export default SensorDataFetcher;
-

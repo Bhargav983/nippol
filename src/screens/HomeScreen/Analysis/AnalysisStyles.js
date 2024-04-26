@@ -19,6 +19,10 @@ const { width: screenWidth } = Dimensions.get('window');
       fontSize: 16,
       color: 'red',
       marginTop: 20,
+    },errorContainer:{
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     heading: {
       fontSize: 16,

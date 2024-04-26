@@ -6,65 +6,133 @@ import { useEllipsisOptions } from '../../../context/EllipsisContext';
 import { useIsFocused } from '@react-navigation/native'; // Importing useIsFocused hook
 import styles from './LiveStatusStyles';
 import axios from 'axios'; // Importing Axios for making HTTP requests
-import showToastInCenter from '../../../utils/CenterToast';
+// import showToastInCenter from '../../../utils/CenterToast';
 import { getLatestSensorDataByUrl } from '../../../apiUtils/apiUrls';
+import Loader from '../../../utils/Loader';
+import CustomModal from '../../../utils/CustomModal';
+
 const Live = ({ navigation }) => {
   const { selectedDevice } = useDeviceContext();
   const { hideEllipsisOptions } = useEllipsisOptions();
   const isFocused = useIsFocused(); // Using useIsFocused hook
+  const [modalVisible, setModalVisible] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(0); 
 
-  const [sensorValues, setSensorValues] = useState({ pH: '', temperature: '', orp: '', timestamp: '', loading: true });
+  const [sensorValues, setSensorValues] = useState({ pH: '', orp: '', conductivity: '', timestamp: '', loading: true });
+  const [urls, setUrls] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(getLatestSensorDataByUrl(selectedDevice.device_id));
-        const data = await response.json();
+        const response = await axios.get(getLatestSensorDataByUrl(selectedDevice.device_id), {
+          timeout: 5000 // Timeout after 5 seconds
+        });
+        console.log(getLatestSensorDataByUrl(selectedDevice.device_id));
+        const data = response.data;
 
         if (data && data.length > 0) {
           const latestReading = data[0];
+          setTimeout(() => {
+            setModalVisible(true);
+            setErrorMsg(1);
+          }, 1500);
           setSensorValues({
             pH: latestReading.tds,
-            temperature: latestReading.temp,
-            orp: latestReading.conductivity,
+            orp: latestReading.voltage_5,
+            conductivity: latestReading.conductivity,
             timestamp: latestReading.timestamp,
-            loading:false
+            loading: false
           });
+         
+          const constructedUrls = constructUrls(latestReading);
+          
+          setTimeout(() => {
+            setUrls(constructedUrls);
+          }, 2500);
+          // setLoading(false);
+          // Construct URLs for WebView
+          
+        } else {
+          setSensorValues({ pH: '', orp: '', conductivity: '', timestamp: '', loading: false });
+          // showToastInCenter("Failed to get the latest info", 'error');
+          setTimeout(() => {
+            setModalVisible(false);
+            setErrorMsg(2);
+          }, 1500);
         }
-
       } catch (error) {
         console.error('Failed to fetch sensor data:', error);
-        setSensorValues({ pH: '', temperature: '', orp: '', timestamp: '', loading: false });
+        setSensorValues({ pH: '', orp: '', conductivity: '', timestamp: '', loading: false });
+        setTimeout(() => {
+          setModalVisible(false);
+          setErrorMsg(2);
+        }, 1500);
+        if (axios.isCancel(error)) {
+          // Handle timeout error
+          setSensorValues({ pH: '', orp: '', conductivity: '', timestamp: '', loading: false });
+          // showToastInCenter("Request timed out", 'error');
+        } else {
+          // Handle other errors
+          // showToastInCenter("Failed to get the latest info", 'error');
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      // Cleanup function
+      // Cancel the Axios request when the component unmounts or the dependencies change
+      const source = axios.CancelToken.source();
+      source.cancel();
+    };
   }, [selectedDevice.device_id]);
+
 
   useEffect(() => {
     let timerId;
-    if (isFocused && !sensorValues.loading) {
+    if (isFocused && !sensorValues.loading && sensorValues.pH) {
       // Show the toast message after a delay of 2 seconds
       timerId = setTimeout(() => {
-        showToastInCenter("Displaying the latest info", 'success');
+        console.log(sensorValues)
+        // showToastInCenter("Displaying the latest info", 'success');
+        setTimeout(() => {
+          setModalVisible(true);
+          setErrorMsg(1);
+        }, 1500);
       }, 1000);
     }
-  
+
     return () => {
       // Clear the timer when the component unmounts or the dependencies change
       clearTimeout(timerId);
     };
   }, [isFocused, sensorValues.loading]);
 
-  if (sensorValues.loading) {
-    return <ActivityIndicator size="large" style={styles.loader} />;
-  }
+  const constructUrls = (reading) => {
+    return [
+      `https://nimblevision-speedometer.web.app/?pH=${reading.tds}`,
+      `https://nimblevision-speedometer.web.app/?orp=${reading.voltage_5}`,
+      `https://nimblevision-speedometer.web.app/?conductivity=${reading.conductivity}`,
+    ];
+  };
 
-  const urls = [
-    `https://nimblevision-speedometer.web.app/?pH=${sensorValues.pH}`,
-    `https://nimblevision-speedometer.web.app/?temperature=${sensorValues.temperature}`,
-    `https://nimblevision-speedometer.web.app/?orp=${sensorValues.orp}`,
-  ];
+  // console.log("loader =", sensorValues.loading)
+  if (sensorValues.loading) {
+    return (
+      <Loader/>
+    );
+  }
+  const handleClose=()=>{
+    setModalVisible(false);
+   }
+  if (!sensorValues.pH || !sensorValues.orp || !sensorValues.conductivity) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>No sensor data available.</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={{ flex: 1 }}>
@@ -84,6 +152,8 @@ const Live = ({ navigation }) => {
           ))}
         </View>
         <View style={{ marginBottom: 50 }}></View>
+        <CustomModal visible={modalVisible} errorMsg={errorMsg} onClose={handleClose} />
+
       </TouchableOpacity>
     </ScrollView>
   );

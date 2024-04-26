@@ -14,12 +14,13 @@ const BottomNavbar = ({ navigation }) => {
   const {  hideOptions } = useOptionsContext();
   const {  hideEllipsisOptions } = useEllipsisOptions();
  const {user} = useUser();
- useEffect(() => {
+ console.log("in home screen user =",user)
+//  useEffect(() => {
   
-  if (!user.email || !user.phone) {
-    navigation.navigate('LoginScreen');
-  }
-}, [user, navigation]);
+//   if (!user.email || !user.phone) {
+//     navigation.navigate('LoginScreen');
+//   }
+// }, [user, navigation]);
   const navigateToScreen = (screenName) => {
     setActiveTab(screenName);
     hideOptions();

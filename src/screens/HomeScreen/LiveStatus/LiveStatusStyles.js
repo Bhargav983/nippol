@@ -53,7 +53,15 @@ thickLine: {
   backgroundColor: 'blue',
   marginVertical: 10,
 },
-
+errorText: {
+  fontSize: 18,
+  color: 'red',
+  // marginTop: 20,
+},errorContainer:{
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
 });
 
 

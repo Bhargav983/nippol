@@ -9,7 +9,7 @@ const showToastInCenter = (text, type) => {
     type: type,
     position: 'bottom',
     text1: text,
-    visibilityTime: 1000,
+    visibilityTime: 3000,
     autoHide: true,
     bottomOffset: height  / 2.4, 
   });
