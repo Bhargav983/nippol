@@ -12,7 +12,7 @@ const Profile = ({ route, navigation }) => {
       await AsyncStorage.clear(); 
       clearUser();
     } catch (error) {
-      console.error('AsyncStorage error during logout:', error);
+      console.error('logout error:', error);
     }
     navigation.navigate('LoginScreen');
   };
