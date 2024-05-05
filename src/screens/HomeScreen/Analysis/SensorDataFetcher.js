@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import moment from 'moment';
 import axios from 'axios'; // Importing Axios for making HTTP requests
 import CustomModal from '../../../utils/CustomModal';
-
+import { getLatestSensorDataUrl } from '../../../apiUtils/apiUrls'; 
 // Function to filter labels to reduce clutter on the X-axis
 const filterLabels = (labels) => {
   const filteredLabels = [];
@@ -16,26 +16,22 @@ const filterLabels = (labels) => {
 const SensorDataFetcher = ({ deviceId }) => {
   const [loading, setLoading] = useState(true);
   const [sensorData, setSensorData] = useState([]);
-  const [updateAvailable, setUpdateAvailable] = useState(false); // Initialize updateAvailable to false
+  const [updateAvailable, setUpdateAvailable] = useState(false); 
   const [modalVisible, setModalVisible] = useState(false);
   const [errorMsg, setErrorMsg] = useState(0);
   useEffect(() => {
     const fetchSensorData = async () => {
       try {
-        const url = `https://nimblevision.io/public/api/getDeviceDiagnosticInfoNisensu?key=chinnu&token=257bbec888a81696529ee979804cca59&device_id=${deviceId}`;
+        const url = getLatestSensorDataUrl(deviceId); 
         const response = await axios.get(url, { timeout: 5000 }); // Timeout after 5 seconds
         const data = response.data;
 
-
         setSensorData(data);
         setUpdateAvailable(true); 
-        
-        
-        // Set updateAvailable to true when new data is received
       } catch (error) {
-        console.error('Failed to fetch sensor data:', error);
+        console.error('err:', error);
         setSensorData([]); 
-        setUpdateAvailable(false); // Set updateAvailable to false if fetching fails
+        setUpdateAvailable(false); 
       } finally {
         setLoading(false);
       }
@@ -80,7 +76,7 @@ const SensorDataFetcher = ({ deviceId }) => {
     };
   };
 
-  return { ...processSensorData(), updateAvailable }; // Return updateAvailable along with other data
+  return { ...processSensorData(), updateAvailable }; 
 };
 
 export default SensorDataFetcher;

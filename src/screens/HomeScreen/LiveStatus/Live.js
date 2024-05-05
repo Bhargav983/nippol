@@ -3,11 +3,10 @@ import { StyleSheet, ScrollView, Text, TouchableOpacity, View, ActivityIndicator
 import { WebView } from 'react-native-webview';
 import { useDeviceContext } from '../../../context/DeviceContext';
 import { useEllipsisOptions } from '../../../context/EllipsisContext';
-import { useIsFocused } from '@react-navigation/native'; // Importing useIsFocused hook
+import { useIsFocused } from '@react-navigation/native'; 
 import styles from './LiveStatusStyles';
-import axios from 'axios'; // Importing Axios for making HTTP requests
-// import showToastInCenter from '../../../utils/CenterToast';
-import { getLatestSensorDataByUrl } from '../../../apiUtils/apiUrls';
+import axios from 'axios'; 
+import { getLatestSensorDataUrl } from '../../../apiUtils/apiUrls';
 import Loader from '../../../utils/Loader';
 import CustomModal from '../../../utils/CustomModal';
 
@@ -24,10 +23,10 @@ const Live = ({ navigation }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(getLatestSensorDataByUrl(selectedDevice.device_id), {
+        const response = await axios.get(getLatestSensorDataUrl(selectedDevice.device_id), {
           timeout: 5000 // Timeout after 5 seconds
         });
-        console.log(getLatestSensorDataByUrl(selectedDevice.device_id));
+        console.log(getLatestSensorDataUrl(selectedDevice.device_id));
         const data = response.data;
 
         if (data && data.length > 0) {
@@ -61,7 +60,7 @@ const Live = ({ navigation }) => {
           }, 1500);
         }
       } catch (error) {
-        console.error('Failed to fetch sensor data:', error);
+        console.log('Failed to fetch sensor data:', error);
         setSensorValues({ pH: '', orp: '', conductivity: '', timestamp: '', loading: false });
         setTimeout(() => {
           setModalVisible(false);

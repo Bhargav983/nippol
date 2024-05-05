@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import Loader from '../../../utils/Loader';
-import CustomModal from '../../../utils/CustomModal';
+import CustomModal from '../../../utils/CustomModal'
 import PHLineChart from './Charts/PHLineChart';
 import ORPLineChart from './Charts/ORPLineChart';
 import ConductivityLineChart from './Charts/ConductivityLineChart';
